@@ -81,10 +81,9 @@ jobs:
   #     NEXT_PUBLIC_CONVEX_URL: http://localhost:3210
   #     CONVEX_URL: http://localhost:3210
   #     # Add your test environment variables here:
-  #     # NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_...
-  #     # CLERK_SECRET_KEY: sk_test_...
-  #     # CLERK_ISSUER_URL: https://your-instance.clerk.accounts.dev
-  #     # NEXT_PUBLIC_API_URL: http://localhost:3000
+  #     # NEXT_PUBLIC_CONVEX_URL: http://localhost:3210
+  #     # SITE_URL: http://localhost:3333
+  #     # NEXT_PUBLIC_API_URL: http://localhost:3333
   #
   #   steps:
   #     - name: Checkout
