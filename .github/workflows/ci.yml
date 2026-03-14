@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  checks:
+    name: Lint and typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Enable Corepack (pnpm)
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+  test:
+    name: Unit and integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Enable Corepack (pnpm)
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests
+        run: pnpm test
+
+  # E2E tests require:
+  #   1. Convex OSS local backend running with auth keys configured
+  #   2. Test user accounts seeded against that local backend
+  # This is tracked as a separate infrastructure task.
+  # The Playwright test runner is currently configured to skip all specs when CI=true
+  # (see playwright.config.ts testIgnore) until this is resolved.
+  # e2e:
+  #   name: E2E tests
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 20
+  #
+  #   services:
+  #     convex-backend:
+  #       image: ghcr.io/get-convex/convex-backend:latest
+  #       ports:
+  #         - 3210:3210
+  #         - 3211:3211
+  #       options: >-
+  #         --health-cmd "curl --fail http://localhost:3210 || exit 1"
+  #         --health-interval 10s
+  #         --health-timeout 5s
+  #         --health-retries 10
+  #
+  #   env:
+  #     NEXT_PUBLIC_CONVEX_URL: http://localhost:3210
+  #     CONVEX_URL: http://localhost:3210
+  #     # Add your test environment variables here:
+  #     # NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_...
+  #     # CLERK_SECRET_KEY: sk_test_...
+  #     # CLERK_ISSUER_URL: https://your-instance.clerk.accounts.dev
+  #     # NEXT_PUBLIC_API_URL: http://localhost:3000
+  #
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Setup Node
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 20
+  #
+  #     - name: Enable Corepack (pnpm)
+  #       run: corepack enable
+  #
+  #     - name: Install dependencies
+  #       run: pnpm install --frozen-lockfile
+  #
+  #     - name: Generate Convex admin key
+  #       id: convex-admin
+  #       run: |
+  #         ADMIN_KEY=$(docker exec ${{ job.services.convex-backend.id }} ./generate_admin_key.sh)
+  #         echo "::add-mask::$ADMIN_KEY"
+  #         echo "admin_key=$ADMIN_KEY" >> $GITHUB_OUTPUT
+  #
+  #     - name: Configure Convex deployment environment
+  #       run: |
+  #         npx convex env set CLERK_ISSUER_URL $CLERK_ISSUER_URL \
+  #           --url http://localhost:3210 \
+  #           --admin-key "${{ steps.convex-admin.outputs.admin_key }}"
+  #
+  #     - name: Push Convex functions to local backend
+  #       run: |
+  #         npx convex dev --once \
+  #           --url http://localhost:3210 \
+  #           --admin-key "${{ steps.convex-admin.outputs.admin_key }}"
+  #
+  #     - name: Install Playwright browsers
+  #       run: pnpm e2e:install
+  #
+  #     - name: Run Playwright tests
+  #       run: pnpm e2e
